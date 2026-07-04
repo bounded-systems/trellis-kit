@@ -267,3 +267,57 @@ export function findMultiContractPairs(
   }
   return out.sort((x, y) => x.pair[0].localeCompare(y.pair[0]));
 }
+
+// ---------------------------------------------------------------------------
+// VerbSpec → contract, and lattice coverage — the two primitives that make
+// "every repo has a VerbSpec (or similar) contract, and is on the lattice"
+// uniform. projectVerbSpec is the ONE canonical projection every wire repo's
+// gen.ts uses (rather than each hand-rolling Object.keys); coverage answers
+// "which repos aren't wired to the lattice yet".
+// ---------------------------------------------------------------------------
+
+/** The dependency-free projection of a wire agreement the offline checks read. */
+export interface WireManifest {
+  readonly type: string;
+  readonly methods: readonly string[];
+  /** Per-method input field names (the top-level keys of the verb's Zod input). */
+  readonly params: Readonly<Record<string, readonly string[]>>;
+}
+
+/**
+ * Project a VerbSpec registry (`{ [id]: defineVerb(...) }`) to a WireManifest —
+ * the canonical VerbSpec→contract step. Structurally typed (only needs each
+ * verb's `input.shape`), so this stays dependency-free: no verbspec/zod import.
+ * The single source of truth both sides of a wire check verify against.
+ */
+export function projectVerbSpec(
+  type: string,
+  registry: Readonly<
+    Record<string, { input: { shape?: Record<string, unknown> } }>
+  >,
+): WireManifest {
+  const methods = Object.keys(registry);
+  const params: Record<string, string[]> = {};
+  for (const [id, verb] of Object.entries(registry)) {
+    params[id] = verb.input?.shape ? Object.keys(verb.input.shape) : [];
+  }
+  return { type, methods, params };
+}
+
+/** Lattice coverage: which repos carry a real contract vs only their build + self. */
+export interface Coverage {
+  readonly total: number;
+  readonly mapped: number;
+  /** Repos with only build + self — on the map, not yet wired to others. */
+  readonly unmapped: readonly string[];
+}
+
+/** Compute coverage over a set of node declarations. */
+export function coverage(nodes: readonly NodeDecl[]): Coverage {
+  const ds = nodes.map(toDerivation);
+  return {
+    total: ds.length,
+    mapped: ds.filter((d) => d.mapped).length,
+    unmapped: ds.filter((d) => !d.mapped).map((d) => d.node),
+  };
+}

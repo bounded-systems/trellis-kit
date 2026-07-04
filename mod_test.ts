@@ -1,9 +1,11 @@
 import { assertEquals } from "@std/assert";
 import {
   BUILD,
+  coverage,
   findCycles,
   findMultiContractPairs,
   NodeDeclSchema,
+  projectVerbSpec,
   SELF,
   toDerivation,
 } from "./mod.ts";
@@ -46,4 +48,38 @@ Deno.test("findMultiContractPairs flags a pair with two agreements", () => {
   assertEquals(v.length, 1);
   assertEquals(v[0].pair.sort(), ["a", "b"]);
   assertEquals(v[0].contracts.sort(), ["mirror", "wire"]);
+});
+
+Deno.test("projectVerbSpec: methods + input field names (dependency-free)", () => {
+  // a VerbSpec-shaped registry — only input.shape is read
+  const registry = {
+    "import-and-push": {
+      input: { shape: { repo: 0, bundleBase64: 0, ledgerRef: 0 } },
+    },
+    status: { input: { shape: {} } },
+  };
+  const m = projectVerbSpec("keeper-wire", registry);
+  assertEquals(m.type, "keeper-wire");
+  assertEquals(m.methods, ["import-and-push", "status"]);
+  assertEquals(m.params["import-and-push"], [
+    "repo",
+    "bundleBase64",
+    "ledgerRef",
+  ]);
+  assertEquals(m.params.status, []);
+});
+
+Deno.test("coverage: mapped vs unmapped repos", () => {
+  const c = coverage([
+    {
+      node: "brand",
+      visibility: "public",
+      provides: [{ type: "brand-tokens", kind: "shared-schema", spec: {} }],
+      consumes: [],
+    },
+    { node: "lonely", visibility: "public", provides: [], consumes: [] },
+  ]);
+  assertEquals(c.total, 2);
+  assertEquals(c.mapped, 1);
+  assertEquals(c.unmapped, ["lonely"]);
 });
