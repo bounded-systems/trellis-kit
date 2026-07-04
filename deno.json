@@ -1,0 +1,19 @@
+{
+  "name": "@bounded-systems/trellis-kit",
+  "version": "0.1.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "exports": "./mod.ts",
+  "imports": {
+    "zod": "npm:zod@^4.4.3",
+    "@std/assert": "jsr:@std/assert@^1"
+  },
+  "tasks": {
+    "check": "deno check mod.ts mod_test.ts",
+    "test": "deno test",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "fmt": { "include": ["*.ts"] },
+  "lint": { "include": ["*.ts"] },
+  "publish": { "include": ["mod.ts", "LICENSE", "README.md"] }
+}
