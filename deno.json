@@ -1,6 +1,6 @@
 {
   "name": "@bounded-systems/trellis-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "PolyForm-Noncommercial-1.0.0",
   "exports": "./mod.ts",
   "imports": {
@@ -13,7 +13,21 @@
     "fmt": "deno fmt",
     "lint": "deno lint"
   },
-  "fmt": { "include": ["*.ts"] },
-  "lint": { "include": ["*.ts"] },
-  "publish": { "include": ["mod.ts", "LICENSE", "README.md"] }
+  "fmt": {
+    "include": [
+      "*.ts"
+    ]
+  },
+  "lint": {
+    "include": [
+      "*.ts"
+    ]
+  },
+  "publish": {
+    "include": [
+      "mod.ts",
+      "LICENSE",
+      "README.md"
+    ]
+  }
 }
