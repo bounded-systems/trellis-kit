@@ -292,14 +292,17 @@ export interface WireManifest {
  */
 export function projectVerbSpec(
   type: string,
-  registry: Readonly<
-    Record<string, { input: { shape?: Record<string, unknown> } }>
-  >,
+  registry: Readonly<Record<string, { readonly input: unknown }>>,
 ): WireManifest {
   const methods = Object.keys(registry);
   const params: Record<string, string[]> = {};
   for (const [id, verb] of Object.entries(registry)) {
-    params[id] = verb.input?.shape ? Object.keys(verb.input.shape) : [];
+    // A verb's input is a Zod schema; only ZodObject carries `.shape`. Typing the
+    // param as `{ input: unknown }` lets a real VerbSpec registry pass without a
+    // cast at the call site; the shape access is narrowed here.
+    const shape = (verb.input as { shape?: Record<string, unknown> } | null)
+      ?.shape;
+    params[id] = shape ? Object.keys(shape) : [];
   }
   return { type, methods, params };
 }
