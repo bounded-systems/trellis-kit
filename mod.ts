@@ -103,9 +103,61 @@ export const ConsumeRefSchema: z.ZodType<ConsumeRef> = z.object({
 });
 
 /**
+ * One machine-checkable proof claim: `claim` is proven by the file at
+ * `provenBy` (a repo-relative path). This is what `drift-gate`'s descriptor
+ * check reads, and what `descriptor-kit` pins by content digest in the README.
+ */
+export interface ProofClaim {
+  readonly claim: string;
+  readonly provenBy: string;
+  readonly via?: string;
+}
+
+export const ProofClaimSchema: z.ZodType<ProofClaim> = z.object({
+  claim: z.string().min(1),
+  provenBy: z.string().min(1),
+  via: z.string().optional(),
+});
+
+/** The proof block: the test suite that runs the claims, and the claims themselves. */
+export interface Proof {
+  readonly suite?: string;
+  readonly claims: readonly ProofClaim[];
+}
+
+export const ProofSchema: z.ZodType<Proof> = z.object({
+  suite: z.string().optional(),
+  claims: z.array(ProofClaimSchema).default([]),
+});
+
+/**
+ * The descriptor block a repo's `trellis.json` may carry — consumed by
+ * `descriptor-kit` (README generation) and `drift-gate` (proof honesty). Known
+ * fields are validated; any extra keys are preserved (`catchall`), so this
+ * schema can guard `proof.claims` without freezing the rest of the block.
+ */
+export interface Descriptor {
+  readonly tagline?: string;
+  readonly what?: string;
+  readonly status?: string;
+  readonly positioning?: string;
+  readonly proof?: Proof;
+  readonly [key: string]: unknown;
+}
+
+export const DescriptorSchema: z.ZodType<Descriptor> = z.object({
+  tagline: z.string().optional(),
+  what: z.string().optional(),
+  status: z.string().optional(),
+  positioning: z.string().optional(),
+  proof: ProofSchema.optional(),
+}).catchall(z.unknown());
+
+/**
  * A repo's own declaration — the per-repo `trellis.json`. Links are by contract
  * TYPE, not repo name: a node never mentions another repo, only the types it
  * speaks. `role`/`domain` mirror the `bounded` package.json metadata block.
+ * `descriptor` is the optional narrative + proof block (see `DescriptorSchema`).
  */
 export interface NodeDecl {
   readonly node: string;
@@ -114,6 +166,7 @@ export interface NodeDecl {
   readonly domain?: string;
   readonly provides: readonly ProvideRef[];
   readonly consumes: readonly ConsumeRef[];
+  readonly descriptor?: Descriptor;
 }
 
 export const NodeDeclSchema: z.ZodType<NodeDecl> = z.object({
@@ -123,6 +176,7 @@ export const NodeDeclSchema: z.ZodType<NodeDecl> = z.object({
   domain: z.string().optional(),
   provides: z.array(ProvideRefSchema).default([]),
   consumes: z.array(ConsumeRefSchema).default([]),
+  descriptor: DescriptorSchema.optional(),
 });
 
 /** Whether an assembled edge has a live check wired, or is only declared. */
