@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertThrows } from "@std/assert";
 import {
   BUILD,
   coverage,
@@ -82,4 +82,42 @@ Deno.test("coverage: mapped vs unmapped repos", () => {
   assertEquals(c.total, 2);
   assertEquals(c.mapped, 1);
   assertEquals(c.unmapped, ["lonely"]);
+});
+
+Deno.test("NodeDeclSchema validates a descriptor with proof claims and preserves extra keys", () => {
+  const d = NodeDeclSchema.parse({
+    node: "guest-room",
+    visibility: "public",
+    provides: [],
+    consumes: [],
+    descriptor: {
+      tagline: "scopes what an agent may do",
+      status: "Partial",
+      links: { repo: "https://example.test" }, // extra key preserved via catchall
+      proof: {
+        suite: "bun test",
+        claims: [
+          {
+            claim: "the engine names no guest",
+            provenBy: "guest-room.test.ts",
+            via: '("names no guest")',
+          },
+        ],
+      },
+    },
+  });
+  assertEquals(d.descriptor?.proof?.claims[0].provenBy, "guest-room.test.ts");
+  assertEquals((d.descriptor as Record<string, unknown>).links, {
+    repo: "https://example.test",
+  });
+});
+
+Deno.test("NodeDeclSchema rejects a proof claim missing provenBy", () => {
+  assertThrows(() =>
+    NodeDeclSchema.parse({
+      node: "x",
+      visibility: "public",
+      descriptor: { proof: { claims: [{ claim: "unbacked" }] } },
+    })
+  );
 });
