@@ -49,4 +49,4 @@ graph from every repo's declaration.
 
 ## License
 
-Source-available under **PolyForm Noncommercial 1.0.0**.
+Open source under the [MIT License](LICENSE).
